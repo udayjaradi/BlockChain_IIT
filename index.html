@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Wallet</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+</head>
+<body>
+    <h1>Simple Wallet-Uday practice</h1>
+    
+    <button onclick="connectWallet()">Connect Wallet</button>
+    <p id="wallet-address"></p>
+
+    <br><br>
+
+    <input type="number" id="depositAmount" placeholder="Amount in ETH">
+    <button onclick="depositFunds()">Deposit</button>
+
+    <br><br>
+
+    <input type="number" id="withdrawAmount" placeholder="Amount in ETH">
+    <button onclick="withdrawFunds()">Withdraw</button>
+
+    <br><br>
+
+    <button onclick="getBalance()">Get Balance</button>
+    <p id="balance"></p>
+
+    <script>
+        let web3;
+        let contract;
+
+        // Replace with your deployed contract details
+        const contractAddress = "0xB687cf7Cb9a35b0d7D00504B0f257102561C0008"; // Replace this
+        const contractABI = [
+	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "balances",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "deposit",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getBalance",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "owner",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "withdraw",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	}
+]
+        async function connectWallet() {
+            if (window.ethereum) {
+                web3 = new Web3(window.ethereum);
+                await window.ethereum.request({ method: "eth_requestAccounts" });
+                const accounts = await web3.eth.getAccounts();
+                document.getElementById("wallet-address").innerText = "Connected: " + accounts[0];
+
+                // Load contract
+                contract = new web3.eth.Contract(contractABI, contractAddress);
+                alert("Wallet Connected!");
+            } else {
+                // Use Infura if MetaMask is not available
+                web3 = new Web3(new Web3.providers.HttpProvider("https://sepolia.infura.io/v3/YOUR_INFURA_PROJECT_ID"));
+                alert("Using Infura (Read-Only)");
+            }
+        }
+
+        async function depositFunds() {
+            const accounts = await web3.eth.getAccounts();
+            const amount = document.getElementById("depositAmount").value;
+            await contract.methods.deposit().send({
+                from: accounts[0],
+                value: web3.utils.toWei(amount, "ether"),
+            });
+            alert("Deposit successful!");
+        }
+
+        async function withdrawFunds() {
+            const accounts = await web3.eth.getAccounts();
+            const amount = document.getElementById("withdrawAmount").value;
+            await contract.methods.withdraw(web3.utils.toWei(amount, "ether")).send({ from: accounts[0] });
+            alert("Withdraw successful!");
+        }
+
+        async function getBalance() {
+            const accounts = await web3.eth.getAccounts();
+            const balance = await contract.methods.getBalance().call({ from: accounts[0] });
+            document.getElementById("balance").innerText = "Balance: " + web3.utils.fromWei(balance, "ether") + " ETH";
+        }
+    </script>
+</body>
+</html>
