@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Interact with varmodify</title>
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.7.5/dist/web3.min.js"></script>
+  
+  <script src="abi.js?v=2"></script>
+</head>
+<body>
+  <h2>Smart Contract Number Viewer</h2>
+  <button onclick="connectWeb3()">Connect Wallet</button>
+  <p id="numberDisplay">Current Number: </p>
+
+  <input type="number" id="numberInput" placeholder="Enter number" />
+  <button onclick="setNumber()">Set Number</button>
+  <button onclick="increment()">Increment</button>
+  <button onclick="decrement()">Decrement</button>
+
+  <script>
+    let web3;
+    let contract;
+    let accounts;
+
+    async function connectWeb3() {
+      if (window.ethereum) {
+        try {
+          await window.ethereum.request({ method: "eth_requestAccounts" });
+          web3 = new Web3(window.ethereum);
+          accounts = await web3.eth.getAccounts();
+
+          contract = new web3.eth.Contract(contractABI, contractAddress);
+
+          console.log("Contract methods:", contract.methods);
+          const value = await contract.methods.getnumber().call();
+         
+          document.getElementById("numberDisplay").innerText = `Current Number: ${value}`;
+        } catch (err) {
+          console.error("User denied account access or error:", err);
+        }
+      } else {
+        alert("Please install MetaMask.");
+      }
+    }
+
+    async function setNumber() {
+      const val = document.getElementById("numberInput").value;
+      await contract.methods.setnumber(val).send({ from: accounts[0] });
+      const value = await contract.methods.getnumber().call();
+      document.getElementById("numberDisplay").innerText = `Current Number: ${value}`;
+    }
+
+    async function increment() {
+      await contract.methods.incrementnumber().send({ from: accounts[0] });
+      const value = await contract.methods.getnumber().call();
+      document.getElementById("numberDisplay").innerText = `Current Number: ${value}`;
+    }
+
+    async function decrement() {
+      await contract.methods.decrementnumber().send({ from: accounts[0] });
+      const value = await contract.methods.getnumber().call();
+      document.getElementById("numberDisplay").innerText = `Current Number: ${value}`;
+    }
+  </script>
+</body>
+</html>
