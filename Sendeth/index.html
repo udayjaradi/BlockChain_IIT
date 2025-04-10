@@ -1,47 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Basic meta tags for character set and responsive viewport -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Send ETH</title>
+    
+    <!-- Include Web3.js library from CDN -->
     <script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js"></script>
+    
     <style>
+        /* Main page styling */
         body {
             font-family: Arial, sans-serif;
             max-width: 600px;
             margin: 0 auto;
             padding: 20px;
         }
+        
+        /* Container for wallet and send form */
         .container {
             border: 1px solid #ddd;
             padding: 20px;
             border-radius: 5px;
             margin-top: 20px;
         }
+        
+        /* Form input and button styling */
         input, button {
             padding: 10px;
             margin: 5px 0;
             width: 100%;
             box-sizing: border-box;
         }
+        
+        /* Button styling */
         button {
             background-color: #4CAF50;
             color: white;
             border: none;
             cursor: pointer;
         }
+        
+        /* Disabled button styling */
         button:disabled {
             background-color: #cccccc;
         }
+        
+        /* Status message container */
         #status {
             margin-top: 10px;
             padding: 10px;
             border-radius: 5px;
         }
+        
+        /* Success message styling */
         .success {
             background-color: #dff0d8;
             color: #3c763d;
         }
+        
+        /* Error message styling */
         .error {
             background-color: #f2dede;
             color: #a94442;
@@ -51,11 +70,13 @@
 <body>
     <h1>Send ETH</h1>
     <div class="container">
+        <!-- Wallet connection section -->
         <div id="walletInfo">
             <p>Connect your wallet to get started</p>
             <button id="connectWallet">Connect Wallet</button>
         </div>
         
+        <!-- ETH transfer form (hidden until wallet connects) -->
         <div id="sendForm" style="display: none;">
             <h3>Send ETH</h3>
             <label for="recipient">Recipient Address:</label>
@@ -70,25 +91,37 @@
     </div>
 
     <script>
+        // Global variables for Web3 instance and accounts
         let web3;
         let accounts = [];
         
+        // Event listeners for buttons
         document.getElementById('connectWallet').addEventListener('click', connectWallet);
         document.getElementById('sendButton').addEventListener('click', sendETH);
         
+        /**
+         * Connects to MetaMask wallet and initializes Web3
+         */
         async function connectWallet() {
             try {
+                // Check if MetaMask is installed
                 if (window.ethereum) {
+                    // Initialize Web3 with MetaMask provider
                     web3 = new Web3(window.ethereum);
+                    
+                    // Request account access
                     accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
                     
+                    // Update UI with connected account
                     document.getElementById('walletInfo').innerHTML = `
                         <p>Connected Account: ${accounts[0]}</p>
                         <p>Balance: <span id="balance">Loading...</span></p>
                     `;
+                    
+                    // Show send form
                     document.getElementById('sendForm').style.display = 'block';
                     
-                    // Get balance
+                    // Get and display account balance
                     const balance = await web3.eth.getBalance(accounts[0]);
                     document.getElementById('balance').innerText = web3.utils.fromWei(balance, 'ether') + ' ETH';
                     
@@ -100,31 +133,42 @@
             }
         }
         
+        /**
+         * Sends ETH to the specified recipient address
+         */
         async function sendETH() {
+            // Get form values
             const recipient = document.getElementById('recipient').value;
             const amount = document.getElementById('amount').value;
             
+            // Validate recipient address
             if (!web3.utils.isAddress(recipient)) {
                 showStatus('Invalid recipient address', 'error');
                 return;
             }
             
+            // Validate amount
             if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
                 showStatus('Invalid amount', 'error');
                 return;
             }
             
             try {
+                // Disable send button during transaction
                 document.getElementById('sendButton').disabled = true;
                 showStatus('Sending transaction...', '');
                 
+                // Convert ETH amount to Wei (smallest ETH unit)
                 const amountWei = web3.utils.toWei(amount, 'ether');
+                
+                // Send transaction
                 const tx = await web3.eth.sendTransaction({
                     from: accounts[0],
                     to: recipient,
                     value: amountWei
                 });
                 
+                // Show success message with transaction hash
                 showStatus(`Transaction successful! Hash: ${tx.transactionHash}`, 'success');
                 
                 // Update balance after sending
@@ -132,12 +176,19 @@
                 document.getElementById('balance').innerText = web3.utils.fromWei(balance, 'ether') + ' ETH';
                 
             } catch (error) {
+                // Show error message if transaction fails
                 showStatus('Error sending transaction: ' + error.message, 'error');
             } finally {
+                // Re-enable send button
                 document.getElementById('sendButton').disabled = false;
             }
         }
         
+        /**
+         * Displays status messages to the user
+         * @param {string} message - The message to display
+         * @param {string} type - The message type ('success' or 'error')
+         */
         function showStatus(message, type) {
             const statusDiv = document.getElementById('status');
             statusDiv.innerText = message;
